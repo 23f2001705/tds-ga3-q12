@@ -26,7 +26,7 @@ jobs:
 
       - name: Scrape tables and compute sum
         run: |
-          cat > scrape.js << 'JSEOF'
+          node -e "
           const { chromium } = require('playwright');
           const seeds = [80,81,82,83,84,85,86,87,88,89];
           const base = 'https://exam.sanand.workers.dev/tds2025-01-ga3?seed=';
@@ -52,5 +52,4 @@ jobs:
             await browser.close();
             console.log('Total Sum: ' + total);
           })();
-          JSEOF
-          node scrape.js
+          "
