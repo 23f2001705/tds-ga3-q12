@@ -1,0 +1,70 @@
+name: DataDash QA - Playwright Table Scraper
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  scrape-and-sum:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright - 23f2001705@ds.study.iitm.ac.in
+        run: |
+          npm init -y
+          npm install playwright
+          npx playwright install chromium --with-deps
+
+      - name: Scrape tables and compute sum
+        run: |
+          cat << 'SCRIPT' > scrape.js
+          const { chromium } = require('playwright');
+
+          const seeds = [80, 81, 82, 83, 84, 85, 86, 87, 88, 89];
+          const baseUrl = 'https://exam.sanand.workers.dev/tds2025-01-ga3?seed=';
+
+          async function scrapeAllPages() {
+            const browser = await chromium.launch();
+            const page = await browser.newPage();
+            let grandTotal = 0;
+
+            for (const seed of seeds) {
+              const url = `${baseUrl}${seed}`;
+              console.log(`Scraping: ${url}`);
+
+              await page.goto(url, { waitUntil: 'networkidle' });
+
+              const numbers = await page.evaluate(() => {
+                const cells = document.querySelectorAll('table td, table th');
+                const nums = [];
+                cells.forEach(cell => {
+                  const text = cell.textContent.trim();
+                  const num = parseFloat(text.replace(/,/g, ''));
+                  if (!isNaN(num)) {
+                    nums.push(num);
+                  }
+                });
+                return nums;
+              });
+
+              const seedTotal = numbers.reduce((a, b) => a + b, 0);
+              console.log(`Seed ${seed}: found ${numbers.length} numbers, sum = ${seedTotal}`);
+              grandTotal += seedTotal;
+            }
+
+            await browser.close();
+            console.log(`\n=== GRAND TOTAL SUM: ${grandTotal} ===`);
+          }
+
+          scrapeAllPages().catch(console.error);
+          SCRIPT
+          node scrape.js
