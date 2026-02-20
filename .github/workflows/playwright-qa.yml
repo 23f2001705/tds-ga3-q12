@@ -29,17 +29,18 @@ jobs:
           node -e "
           const { chromium } = require('playwright');
           const seeds = [80,81,82,83,84,85,86,87,88,89];
-          const base = 'https://exam.sanand.workers.dev/tds2025-01-ga3?seed=';
+          const base = 'https://sanand0.github.io/tdsdata/js_table/?seed=';
           (async () => {
             const browser = await chromium.launch();
             const page = await browser.newPage();
             let total = 0;
             for (const seed of seeds) {
-              await page.goto(base + seed, { waitUntil: 'networkidle', timeout: 60000 });
-              await page.waitForSelector('table', { timeout: 30000 }).catch(() => {});
+              const url = base + seed;
+              await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
+              await page.waitForSelector('table', { timeout: 30000 });
               const nums = await page.evaluate(() => {
                 const result = [];
-                document.querySelectorAll('table td, table th').forEach(cell => {
+                document.querySelectorAll('table td').forEach(cell => {
                   const n = parseFloat(cell.innerText.trim().replace(/,/g, ''));
                   if (!isNaN(n)) result.push(n);
                 });
